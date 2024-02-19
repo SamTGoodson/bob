@@ -11,12 +11,14 @@ from spotipy.exceptions import SpotifyException
 from scipy.spatial import distance
 
 from sklearn.neighbors import NearestNeighbors
-from dotenv import load_dotenv
 
-load_dotenv()
-scope = "user-library-read user-top-read playlists-modify-public"
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
-user = sp.current_user()
+SPOTIPY_CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
+SPOTIPY_CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
+SPOTIPY_REDIRECT_URI = os.getenv('SPOTIPY_REDIRECT_URI')
+
+scope = "user-library-read user-top-read playlist-modify-public"
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id = SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET ,
+                                               redirect_uri=SPOTIPY_REDIRECT_URI,scope=scope))
 
 manual_catagorical_cols = ['mode', 'key', 'time_signature']
 feature_columns = ['danceability_mean', 'energy_mean', 'loudness_mean','speechiness_mean',
@@ -56,7 +58,7 @@ def find_closest_album(user_raw,album_features, feature_columns):
             max_similarity = similarity
             closest_album = row['album_name']  
 
-    print(f"The closest album to the user's preferences is: {closest_album}")
+    return closest_album
 
 
 def get_recommended_songs(songs,user_info):
@@ -75,3 +77,21 @@ def create_and_fill_playlist(recommended_songs_df,user):
     track_ids = recommended_songs_df['id'].tolist()
     sp.user_playlist_add_tracks(user_id, playlist['id'], track_ids, position=None)
     print("Playlist created and filled with recommended songs.")
+
+def process_bob(bob_df, cat_cols, con_cols):
+
+    processed_data = pd.DataFrame()
+    
+    grouped = bob_df.groupby('album_name')
+    
+    for col in con_cols:
+        if col in bob_df.columns:
+            processed_data[col + '_mean'] = grouped[col].mean()
+    
+    for col in cat_cols:
+        if col in bob_df.columns:
+            processed_data[col + '_mode'] = grouped[col].apply(lambda x: x.mode()[0] if not x.mode().empty else None)
+    
+    processed_data = processed_data.reset_index()
+    
+    return processed_data

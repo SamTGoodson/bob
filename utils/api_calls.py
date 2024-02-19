@@ -7,12 +7,7 @@ import time
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.exceptions import SpotifyException
-from dotenv import load_dotenv
 
-load_dotenv()
-scope = "user-library-read user-top-read playlists-modify-public"
-
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
 
 def safe_spotify_request(call, *args, **kwargs):
