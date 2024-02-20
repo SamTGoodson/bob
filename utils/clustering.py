@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import ast
 
 import time
 
@@ -12,13 +13,9 @@ from scipy.spatial import distance
 
 from sklearn.neighbors import NearestNeighbors
 
-SPOTIPY_CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
-SPOTIPY_CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
-SPOTIPY_REDIRECT_URI = os.getenv('SPOTIPY_REDIRECT_URI')
 
 scope = "user-library-read user-top-read playlist-modify-public"
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id = SPOTIPY_CLIENT_ID,client_secret=SPOTIPY_CLIENT_SECRET ,
-                                               redirect_uri=SPOTIPY_REDIRECT_URI,scope=scope))
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
 manual_catagorical_cols = ['mode', 'key', 'time_signature']
 feature_columns = ['danceability_mean', 'energy_mean', 'loudness_mean','speechiness_mean',
@@ -56,9 +53,12 @@ def find_closest_album(user_raw,album_features, feature_columns):
         similarity = 1 - distance.cosine(user_features, album_features)  
         if similarity > max_similarity:
             max_similarity = similarity
-            closest_album = row['album_name']  
+            closest_album = row['album_name']
+            images = ast.literal_eval(row['images']) 
+            if images:  
+                image_url = images[0]['url'] 
 
-    return closest_album
+    return closest_album,image_url
 
 
 def get_recommended_songs(songs,user_info):
